@@ -1,0 +1,54 @@
+﻿@model List<OfferedCourse>
+
+@Html.Partial("_Message")
+
+<div class="row pt-4">
+	<div class="col-6">
+		<h2>Offered Course</h2>
+	</div>
+	<hr />
+</div>
+
+<div class="row pt-2">
+	<div class="col-12">
+
+		<table class="table table-bordered table-hover">
+			<tr class="table-info">
+				<th>Ref</th>
+				<th>Course</th>
+				<th>Tutor</th>
+				<th>Price</th>
+				<th>Start Date</th>
+				<th>End Date</th>
+				<th>Status</th>
+				<th>Action</th>
+			</tr>
+
+			@if (Model.Count == 0)
+			{
+				<tr class="table-secondary text-center">
+					<td colspan="5">No Data to show.</td>
+				</tr>
+			}
+			else
+			{
+				foreach (var offeredCourse in Model)
+				{
+					<tr>
+						<td>@offeredCourse.Id</td>
+						<td>@offeredCourse.Course.Subject</td>
+						<td>@offeredCourse.User.UserName</td>
+						<td>@offeredCourse.Price.ToString("n")</td>
+						<td>@offeredCourse.StartDate</td>
+						<td>@offeredCourse.EndDate</td>
+						<td>@offeredCourse.Status</td>
+						<td>
+							<a asp-action="Apply" asp-controller="OfferedCourse" class="btn btn-primary" asp-route-dataId="@offeredCourse.Id">Apply</a>
+						</td>
+					</tr>
+				}
+			}
+		</table>
+
+	</div>
+</div>

@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="ProjectShihab.Api/ProjectShihab.Api.csproj" Id="a9dbe5a6-29d0-4e14-a97b-21a7bc37e3a8" />
+  <Project Path="ProjectShihab.Data/ProjectShihab.Data.csproj" />
+  <Project Path="ProjectShihab.Entities/ProjectShihab.Entities.csproj" />
+  <Project Path="ProjectShihab.Models/ProjectShihab.Models.csproj" Id="baf2995f-60f2-4e3b-836d-13b4222e28c1" />
+  <Project Path="ProjectShihab.Repos/ProjectShihab.Repos.csproj" />
+  <Project Path="ProjectShihab.Shared/ProjectShihab.Shared.csproj" />
+  <Project Path="ProjectShihab.Web/ProjectShihab.Web.csproj" />
+</Solution>

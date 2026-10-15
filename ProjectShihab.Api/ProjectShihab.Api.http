@@ -1,0 +1,6 @@
+@ProjectShihab.Api_HostAddress = http://localhost:5132
+
+GET {{ProjectShihab.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

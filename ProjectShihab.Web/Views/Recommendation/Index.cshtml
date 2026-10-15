@@ -1,0 +1,46 @@
+﻿@model List<Recommendation>
+
+@Html.Partial("_Message")
+
+<div class="row pt-4">
+	<div class="col-6">
+		<h2>Recommendation</h2>
+	</div>
+	<hr />
+</div>
+
+<div class="row pt-2">
+	<div class="col-12">
+
+		<table class="table table-bordered table-hover">
+			<tr class="table-info">
+				<th>Ref</th>
+				<th>From</th>
+				<th>To</th>
+				<th>Message</th>
+				<th>Date</th>
+			</tr>
+
+			@if (Model.Count == 0)
+			{
+				<tr class="table-secondary text-center">
+					<td colspan="5">No Data to show.</td>
+				</tr>
+			}
+			else
+			{
+				foreach (var recommendation in Model)
+				{
+					<tr>
+						<td>@recommendation.Id</td>
+						<td>@recommendation.FromUser.UserName</td>
+						<td>@recommendation.ToUser.UserName</td>
+						<td>@recommendation.Message</td>
+						<td>@recommendation.Date</td>
+					</tr>
+				}
+			}
+		</table>
+
+	</div>
+</div>
