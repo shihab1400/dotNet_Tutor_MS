@@ -1,0 +1,63 @@
+@model CheckoutModel
+@{
+    ViewData["Title"] = "Checkout";
+    var applied = Model.Discount > 0;
+}
+
+<div class="page-header">
+    <div>
+        <h1>Checkout</h1>
+        <p>Review your order and complete the payment to enroll.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mb-4">
+            <div class="card-body d-flex gap-3 align-items-center">
+                <span class="stat-icon @(Model.Kind == PaymentKinds.Training ? "tone-warning" : "tone-brand")"><i class="bi @(Model.Kind == PaymentKinds.Training ? "bi-easel" : "bi-journal-bookmark")"></i></span>
+                <div>
+                    <h4 class="mb-1">@Model.Title</h4>
+                    <div class="text-muted">@Model.Subtitle</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Have a coupon?</div>
+            <div class="card-body">
+                <form asp-action="Checkout" method="get">
+                    <input type="hidden" name="kind" value="@Model.Kind" />
+                    <input type="hidden" name="id" value="@Model.TargetId" />
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-ticket-perforated"></i></span>
+                        <input name="couponCode" value="@Model.CouponCode" class="form-control mono text-uppercase" placeholder="Enter coupon code" />
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                </form>
+                @if (!string.IsNullOrEmpty(Model.CouponMessage))
+                {
+                    <div class="mt-2 small fw-semibold @(applied ? "text-success" : "text-danger")">
+                        <i class="bi @(applied ? "bi-check-circle" : "bi-x-circle")"></i> @Model.CouponMessage
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">Order summary</div>
+            <div class="card-body">
+                <div class="summary-row"><span class="text-muted">Price</span><span>@Ui.Money(Model.Original)</span></div>
+                <div class="summary-row"><span class="text-muted">Discount @if (applied) { <span class="tag mono ms-1">@Model.CouponCode?.ToUpper()</span> }</span><span class="text-success">− @Ui.Money(Model.Discount)</span></div>
+                <div class="summary-row summary-total"><span>Total</span><span>@Ui.Money(Model.Final)</span></div>
+                <form asp-action="Pay" method="post" class="mt-3">
+                    <input type="hidden" name="kind" value="@Model.Kind" />
+                    <input type="hidden" name="id" value="@Model.TargetId" />
+                    <input type="hidden" name="couponCode" value="@(applied ? Model.CouponCode : "")" />
+                    <button type="submit" class="btn btn-primary btn-lg w-100 justify-content-center"><i class="bi bi-lock-fill"></i> Pay @Ui.Money(Model.Final)</button>
+                </form>
+                <div class="text-center text-muted small mt-3"><i class="bi bi-info-circle"></i> Demo payment. No real money is charged.</div>
+            </div>
+        </div>
+    </div>
+</div>

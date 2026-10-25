@@ -1,0 +1,25 @@
+@model TrainingOffering
+@{
+    ViewData["Title"] = Model.Id == 0 ? "New training" : "Edit training";
+}
+
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Tutors pay to enroll; once you complete their training you can issue a certificate.</p>
+    </div>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div>
+
+<div class="card form-card">
+    <div class="card-body p-4">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <partial name="_OfferingForm" model="@(((SelectList)ViewBag.Courses, Model.Price, Model.StartDate, Model.EndDate, Model.Status, Model.CourseId))" />
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save training</button>
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

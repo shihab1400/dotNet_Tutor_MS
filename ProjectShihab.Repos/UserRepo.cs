@@ -1,134 +1,141 @@
-﻿using ProjectShihab.Data;
+using Microsoft.AspNetCore.Identity;
+using ProjectShihab.Data;
 using ProjectShihab.Entities;
 using ProjectShihab.Shared;
 
 namespace ProjectShihab.Repos
 {
-    public class UserRepo(AsDbContext context)
+    public class UserRepo(AsDbContext context, LogRepo logRepo)
     {
-        public Result<List<User>> GetAll()
+        private readonly PasswordHasher<User> hasher = new();
+
+        public Result<List<User>> GetAll(string? role = null)
         {
-            var result = new Result<List<User>>();
             try
             {
-                result.Data = context.Users.ToList();
+                var query = context.Users.AsQueryable();
+                if (!string.IsNullOrEmpty(role))
+                    query = query.Where(e => e.Role == role);
+                return Result<List<User>>.Ok(query.OrderBy(e => e.Role).ThenBy(e => e.UserName).ToList());
             }
             catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = e.Message;
+                return Result<List<User>>.Fail(e.Message);
             }
-
-            return result;
         }
 
         public Result<User> GetById(int id)
         {
-            var result = new Result<User>();
             try
             {
-                result.Data = context.Users.Find(id);
+                return Result<User>.Ok(context.Users.Find(id));
             }
             catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = e.Message;
+                return Result<User>.Fail(e.Message);
             }
-
-            return result;
         }
 
         public Result<User> Authenticate(string email, string password)
         {
-            var result = new Result<User>();
             try
             {
-                result.Data = context.Users.FirstOrDefault(e => e.Email == email && e.Password == password);
-                if(result.Data==null)
+                var user = context.Users.FirstOrDefault(e => e.Email == email);
+                if (user == null || hasher.VerifyHashedPassword(user, user.PasswordHash, password) == PasswordVerificationResult.Failed)
                 {
-                    result.HasError = true;
-                    result.Message = "Invalid Credential";
+                    logRepo.AddFor(user, "Login Failed", $"Email: {email}");
+                    return Result<User>.Fail("Invalid Credential");
                 }
+
+                if (!user.Status)
+                {
+                    logRepo.AddFor(user, "Login Blocked", "Account is deactivated");
+                    return Result<User>.Fail("Your account is deactivated.");
+                }
+
+                logRepo.AddFor(user, "Login");
+                return Result<User>.Ok(user);
             }
             catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = e.Message;
+                return Result<User>.Fail(e.Message);
             }
+        }
 
+        // Public self-registration: only Student and Tutor are allowed.
+        public Result<User> Register(User model, string password)
+        {
+            if (model.Role != Roles.Student && model.Role != Roles.Tutor)
+                return Result<User>.Fail("Only Student or Tutor accounts can be registered.");
+
+            var result = Create(model, password);
+            if (!result.HasError && result.Data != null)
+                logRepo.AddFor(result.Data, "Register", $"Role: {result.Data.Role}");
             return result;
         }
 
-        public Result<User> Save(User model)
+        // Admin only: trainers cannot self-register.
+        public Result<User> CreateTrainer(User model, string password)
         {
-            var result = new Result<User>();
-
-            try
-            {
-                if (context.Users.Any(e => e.Email.ToLower() == model.Email.ToLower() && e.Id != model.Id))
-                {
-                    result.HasError = true;
-                    result.Message = "Email already exists.";
-                    return result;
-                }
-
-                var objToSave = context.Users.Find(model.Id);
-                if (objToSave == null)
-                {
-                    objToSave = new User();
-                    context.Users.Add(objToSave);
-                }
-
-                objToSave.UserName = model.UserName;
-                objToSave.Email = model.Email;
-                objToSave.Gender = model.Gender;
-
-                objToSave.ContactNumber = model.ContactNumber;
-                objToSave.Dob = model.Dob;
-                objToSave.Role = model.Role;
-                objToSave.Address = model.Address;
-                objToSave.Password = model.Password;
-                objToSave.Status = model.Status;
-
-                context.SaveChanges();
-                result.Data = objToSave;
-            }
-            catch (Exception ex)
-            {
-                result.HasError = true;
-                result.Message = ex.Message;
-            }
-
+            model.Role = Roles.Trainer;
+            var result = Create(model, password);
+            if (!result.HasError && result.Data != null)
+                logRepo.Add("Create Trainer", "User", result.Data.Id, result.Data.Email);
             return result;
         }
 
-        public Result<User> Delete(int id)
+        public Result<User> SetStatus(int id, bool status)
         {
-            var result = new Result<User>();
-
             try
             {
-                var entity = context.Users.Find(id);
+                var user = context.Users.Find(id);
+                if (user == null)
+                    return Result<User>.Fail($"User with ID {id} was not found.");
+                if (user.Role == Roles.Admin)
+                    return Result<User>.Fail("Admin accounts cannot be deactivated.");
 
-                if (entity == null)
-                {
-                    result.HasError = true;
-                    result.Message = $"User with ID {id} was not found.";
-                    return result;
-                }
-
-                context.Users.Remove(entity);
+                user.Status = status;
                 context.SaveChanges();
-
-                result.Data = entity;
+                logRepo.Add(status ? "Activate User" : "Deactivate User", "User", user.Id, user.Email);
+                return Result<User>.Ok(user);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = "An error occurred while deleting the User.";
+                return Result<User>.Fail(e.Message);
             }
+        }
 
-            return result;
+        private Result<User> Create(User model, string password)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+                    return Result<User>.Fail("Password must be at least 6 characters.");
+                if (context.Users.Any(e => e.Email.ToLower() == model.Email.ToLower()))
+                    return Result<User>.Fail("Email already exists.");
+
+                var user = new User
+                {
+                    UserName = model.UserName,
+                    Email = model.Email,
+                    Gender = model.Gender,
+                    ContactNumber = model.ContactNumber,
+                    Dob = model.Dob,
+                    Address = model.Address,
+                    Role = model.Role,
+                    Status = true,
+                    CreatedAt = DateTime.Now
+                };
+                user.PasswordHash = hasher.HashPassword(user, password);
+
+                context.Users.Add(user);
+                context.SaveChanges();
+                return Result<User>.Ok(user);
+            }
+            catch (Exception e)
+            {
+                return Result<User>.Fail(e.Message);
+            }
         }
     }
 }

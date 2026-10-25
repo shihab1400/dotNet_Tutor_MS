@@ -1,0 +1,46 @@
+@model RegisterModel
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="UserName" class="form-label">Full name</label>
+        <input asp-for="UserName" class="form-control" placeholder="e.g. Ayan Mahmud" />
+        <span asp-validation-for="UserName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" placeholder="you@example.com" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Gender" class="form-label"></label>
+        <select asp-for="Gender" class="form-select">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Others</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContactNumber" class="form-label"></label>
+        <input asp-for="ContactNumber" class="form-control" placeholder="01XXXXXXXXX" />
+        <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Dob" class="form-label"></label>
+        <input asp-for="Dob" type="date" class="form-control" value="@Model.Dob.ToString("yyyy-MM-dd")" />
+        <span asp-validation-for="Dob" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Address" class="form-label"></label>
+        <input asp-for="Address" class="form-control" placeholder="Area, City" />
+        <span asp-validation-for="Address" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" type="password" class="form-control" placeholder="At least 6 characters" />
+        <span asp-validation-for="Password" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <input asp-for="ConfirmPassword" type="password" class="form-control" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+    </div>
+</div>

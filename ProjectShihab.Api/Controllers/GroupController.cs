@@ -1,7 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using ProjectShihab.Entities;
 using ProjectShihab.Repos;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace ProjectShihab.Api.Controllers
 {
@@ -10,29 +9,15 @@ namespace ProjectShihab.Api.Controllers
     public class GroupController(GroupRepo repo) : ControllerBase
     {
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var result = repo.GetAll();
-            return Ok(result);
-        }
+        public IActionResult GetAll() => Ok(repo.GetAll());
+
         [HttpGet("GetById/{id}")]
-        public IActionResult GetById(int id)
-        {
-            var result = repo.GetById(id);
-            return Ok(result);
-        }
+        public IActionResult GetById(int id) => Ok(repo.GetById(id));
+
         [HttpPost]
-        public IActionResult Save(Group model)
-        {
-            var result = repo.Save(model);
-            return Ok(result);
-        }
+        public IActionResult Save(Group model) => Ok(repo.Save(model));
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var success = repo.Delete(id);
-            return Ok(success);
-        }
+        public IActionResult Delete(int id) => Ok(repo.Delete(id));
     }
 }

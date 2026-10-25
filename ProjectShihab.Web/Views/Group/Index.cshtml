@@ -1,0 +1,78 @@
+@model List<Group>
+@{
+    ViewData["Title"] = "Groups";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Groups</h1>
+        <p>Courses are organised under groups such as Class 8, Class 9, CSE or EEE.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header" id="groupFormTitle">New group</div>
+            <div class="card-body">
+                <form asp-action="Save" method="post">
+                    <input type="hidden" name="Id" value="0" id="groupId" />
+                    <label class="form-label" for="groupTitle">Title</label>
+                    <input name="Title" id="groupTitle" class="form-control mb-3" placeholder="e.g. Class 10" required maxlength="250" />
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save</button>
+                        <button type="button" class="btn btn-light" onclick="resetGroup()">Clear</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card table-card">
+            @if (Model.Count == 0)
+            {
+                <partial name="_Empty" model="@(("bi-collection", "No groups yet", "Create the first group on the left."))" />
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>#</th><th>Title</th><th class="text-end">Action</th></tr></thead>
+                        <tbody>
+                            @foreach (var g in Model)
+                            {
+                                <tr>
+                                    <td class="text-muted">@g.Id</td>
+                                    <td><span class="d-inline-flex align-items-center gap-2 cell-title"><span class="stat-icon tone-brand" style="width:32px;height:32px;font-size:.9rem;border-radius:8px"><i class="bi bi-collection"></i></span>@g.Title</span></td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-light" onclick="editGroup(@g.Id, '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(g.Title))')"><i class="bi bi-pencil"></i> Rename</button>
+                                        <form asp-action="Delete" method="post" class="d-inline" data-confirm="Delete group '@g.Title'?">
+                                            <input type="hidden" name="id" value="@g.Id" />
+                                            <button type="submit" class="btn btn-sm btn-soft-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function editGroup(id, title) {
+            document.getElementById('groupId').value = id;
+            document.getElementById('groupTitle').value = title;
+            document.getElementById('groupFormTitle').textContent = 'Rename group';
+            document.getElementById('groupTitle').focus();
+        }
+        function resetGroup() {
+            document.getElementById('groupId').value = 0;
+            document.getElementById('groupTitle').value = '';
+            document.getElementById('groupFormTitle').textContent = 'New group';
+        }
+    </script>
+}

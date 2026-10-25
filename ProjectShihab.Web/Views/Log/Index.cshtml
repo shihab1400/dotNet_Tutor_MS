@@ -1,0 +1,102 @@
+@model List<Log>
+@{
+    ViewData["Title"] = "Activity log";
+    var filter = (LogFilterModel)ViewBag.Filter;
+    string ActionTone(string a) =>
+        a.Contains("Fail") || a.Contains("Blocked") || a.Contains("Delete") || a.Contains("Deactivate") ? "danger"
+        : a.Contains("Login") || a.Contains("Logout") ? "muted"
+        : a.Contains("Enroll") || a.Contains("Pay") ? "success"
+        : a.Contains("Certificate") || a.Contains("Complete") || a.Contains("Rate") ? "warning"
+        : "brand";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Activity log</h1>
+        <p>Every action by every user. Only administrators can see this page.</p>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input name="Search" value="@filter.Search" class="form-control" placeholder="User, action or details" />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Role</label>
+                <select name="Role" class="form-select">
+                    <option value="">All roles</option>
+                    @foreach (var r in new[] { Roles.Admin, Roles.Trainer, Roles.Tutor, Roles.Student, "Guest" })
+                    {
+                        <option value="@r" selected="@(filter.Role == r)">@r</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2"><label class="form-label">From</label><input type="date" name="From" value="@filter.From?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-2"><label class="form-label">To</label><input type="date" name="To" value="@filter.To?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1 justify-content-center">Filter</button>
+                <a asp-action="Index" class="btn btn-light" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <partial name="_Empty" model="@(("bi-shield-check", "No log entries", "Try a different filter."))" />
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+                <tbody>
+                    @foreach (var l in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap"><div class="cell-title">@l.CreatedAt.ToString("dd MMM yyyy")</div><div class="cell-sub">@l.CreatedAt.ToString("hh:mm:ss tt")</div></td>
+                            <td>@Ui.Person(l.UserName, l.Role)</td>
+                            <td>@Ui.Pill(l.Action, ActionTone(l.Action))</td>
+                            <td class="cell-sub text-nowrap">@l.Entity @(l.EntityId != null ? $"#{l.EntityId}" : "")</td>
+                            <td class="cell-sub" style="max-width:360px">@l.Details</td>
+                            <td class="mono text-muted">@l.IpAddress</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (filter.TotalPages > 1)
+{
+    var start = Math.Max(1, filter.Page - 3);
+    var end = Math.Min(filter.TotalPages, filter.Page + 3);
+    <nav class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="text-muted small">Page @filter.Page of @filter.TotalPages</span>
+        <ul class="pagination mb-0">
+            @if (filter.Page > 1)
+            {
+                <li class="page-item"><a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Role="@filter.Role" asp-route-From="@filter.From?.ToString("yyyy-MM-dd")" asp-route-To="@filter.To?.ToString("yyyy-MM-dd")" asp-route-Page="@(filter.Page - 1)"><i class="bi bi-chevron-left"></i></a></li>
+            }
+            @for (var p = start; p <= end; p++)
+            {
+                <li class="page-item @(p == filter.Page ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Role="@filter.Role"
+                       asp-route-From="@filter.From?.ToString("yyyy-MM-dd")" asp-route-To="@filter.To?.ToString("yyyy-MM-dd")" asp-route-Page="@p">@p</a>
+                </li>
+            }
+            @if (filter.Page < filter.TotalPages)
+            {
+                <li class="page-item"><a class="page-link" asp-action="Index" asp-route-Search="@filter.Search" asp-route-Role="@filter.Role" asp-route-From="@filter.From?.ToString("yyyy-MM-dd")" asp-route-To="@filter.To?.ToString("yyyy-MM-dd")" asp-route-Page="@(filter.Page + 1)"><i class="bi bi-chevron-right"></i></a></li>
+            }
+        </ul>
+    </nav>
+}

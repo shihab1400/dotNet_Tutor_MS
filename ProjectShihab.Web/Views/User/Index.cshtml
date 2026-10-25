@@ -1,0 +1,72 @@
+@model List<User>
+@{
+    ViewData["Title"] = "Users";
+    string? role = ViewBag.Role;
+    string RoleTone(string r) => r switch { Roles.Admin => "danger", Roles.Trainer => "warning", Roles.Tutor => "info", _ => "brand" };
+}
+
+<div class="page-header">
+    <div>
+        <h1>Users</h1>
+        <p>@Model.Count account(s). Trainers can only be added here.</p>
+    </div>
+    <div class="page-actions">
+        <a asp-action="CreateTrainer" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add trainer</a>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between gap-2">
+    <div class="chips">
+        <a asp-action="Index" class="chip @(role == null ? "active" : "")">All</a>
+        @foreach (var r in new[] { Roles.Admin, Roles.Trainer, Roles.Tutor, Roles.Student })
+        {
+            <a asp-action="Index" asp-route-role="@r" class="chip @(role == r ? "active" : "")">@(r)s</a>
+        }
+    </div>
+    <div style="min-width:260px" class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input class="form-control" placeholder="Search users…" data-table-filter="#usersTable" />
+        </div>
+    </div>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <partial name="_Empty" model="@(("bi-people", "No users", "No users match this filter."))" />
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="usersTable">
+                <thead><tr><th>User</th><th>Role</th><th>Contact</th><th>Address</th><th>Joined</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>@Ui.Person(u.UserName, u.Email)</td>
+                            <td>@Ui.Pill(u.Role, RoleTone(u.Role))</td>
+                            <td>@u.ContactNumber</td>
+                            <td class="cell-sub">@u.Address</td>
+                            <td>@u.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>@(u.Status ? Ui.Pill("Active", "success") : Ui.Pill("Deactivated", "danger"))</td>
+                            <td class="text-end">
+                                @if (u.Role != Roles.Admin)
+                                {
+                                    <form asp-action="SetStatus" method="post" class="d-inline" data-confirm="@(u.Status ? $"Deactivate {u.UserName}?" : $"Activate {u.UserName}?")">
+                                        <input type="hidden" name="id" value="@u.Id" />
+                                        <input type="hidden" name="status" value="@((!u.Status).ToString().ToLower())" />
+                                        <button type="submit" class="btn btn-sm @(u.Status ? "btn-soft-danger" : "btn-soft-success")">
+                                            <i class="bi @(u.Status ? "bi-slash-circle" : "bi-check-circle")"></i> @(u.Status ? "Deactivate" : "Activate")
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

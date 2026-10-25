@@ -1,8 +1,7 @@
-using EventManagement.Shared;
 using Microsoft.EntityFrameworkCore;
 using ProjectShihab.Data;
 using ProjectShihab.Repos;
-using System.Diagnostics;
+using ProjectShihab.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,22 +9,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AsDbContext>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("AsDbContext")));
-builder.Services.AddScoped<OfferedCourseRepo>();
-builder.Services.AddScoped<RecommendationRepo>();
-builder.Services.AddScoped<CourseRepo>();
-builder.Services.AddScoped<GroupRepo>();
-builder.Services.AddScoped<RatingRepo>();
+
+// AddScoped -> one object per HTTP request
 builder.Services.AddScoped<UserRepo>();
+builder.Services.AddScoped<GroupRepo>();
+builder.Services.AddScoped<CourseRepo>();
+builder.Services.AddScoped<CouponRepo>();
+builder.Services.AddScoped<PaymentRepo>();
+builder.Services.AddScoped<TrainingRepo>();
+builder.Services.AddScoped<OfferedCourseRepo>();
+builder.Services.AddScoped<RatingRepo>();
+builder.Services.AddScoped<MaterialRepo>();
+builder.Services.AddScoped<LogRepo>();
+builder.Services.AddScoped<DashboardRepo>();
 builder.Services.AddScoped<CurrentUserHelper>();
 
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(opt =>
-{
-    opt.IdleTimeout = TimeSpan.FromMinutes(30);
-    opt.Cookie.HttpOnly = true;
-    opt.Cookie.IsEssential = true;
-});
 builder.Services.AddAuthentication("AsAuth").AddCookie("AsAuth", opt =>
 {
     opt.AccessDeniedPath = "/Auth/Denied";
@@ -35,11 +34,20 @@ builder.Services.AddAuthentication("AsAuth").AddCookie("AsAuth", opt =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AsDbContext>();
+    db.Database.Migrate();
+    DbSeeder.Seed(db);
+    // Demo users, trainings, courses, payments, ratings... (runs once; set "SeedDemoData": false to skip).
+    if (app.Configuration.GetValue("SeedDemoData", true))
+        DemoDataSeeder.Seed(db, Path.Combine(app.Environment.WebRootPath, "uploads"));
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -52,6 +60,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=OfferedCourse}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

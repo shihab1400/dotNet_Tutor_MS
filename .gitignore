@@ -27,3 +27,5 @@ wwwroot/lib/
 
 # User-specific files
 *.rsuser
+# Uploaded course materials
+ProjectShihab.Web/wwwroot/uploads/

@@ -1,26 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjectShihab.Repos;
 using ProjectShihab.Web.Models;
 using System.Diagnostics;
 
 namespace ProjectShihab.Web.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(DashboardRepo dashboardRepo) : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
+        // Public landing page: the only page a guest can see besides Login / Register.
         public IActionResult Index()
         {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
+            return View(dashboardRepo.GetPublic());
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

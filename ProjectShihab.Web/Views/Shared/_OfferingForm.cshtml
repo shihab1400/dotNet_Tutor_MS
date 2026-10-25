@@ -1,0 +1,35 @@
+@* Shared fields for TrainingOffering and OfferedCourse edit forms. *@
+@model (SelectList Courses, decimal Price, DateTime Start, DateTime End, bool Status, int CourseId)
+<div class="row g-3">
+    <div class="col-12">
+        <label class="form-label" for="CourseId">Course</label>
+        <select name="CourseId" id="CourseId" class="form-select">
+            @foreach (var item in Model.Courses)
+            {
+                <option value="@item.Value" selected="@(item.Value == Model.CourseId.ToString())">@item.Text</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label" for="Price">Price</label>
+        <div class="input-group">
+            <span class="input-group-text">৳</span>
+            <input name="Price" id="Price" type="number" min="0" step="1" class="form-control" value="@Model.Price.ToString("0")" required />
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label" for="StartDate">Start date</label>
+        <input name="StartDate" id="StartDate" type="date" class="form-control" value="@Model.Start.ToString("yyyy-MM-dd")" required />
+    </div>
+    <div class="col-md-4">
+        <label class="form-label" for="EndDate">End date</label>
+        <input name="EndDate" id="EndDate" type="date" class="form-control" value="@Model.End.ToString("yyyy-MM-dd")" required />
+    </div>
+    <div class="col-12">
+        <div class="form-check form-switch">
+            <input type="checkbox" name="Status" id="Status" value="true" class="form-check-input" role="switch" checked="@Model.Status" />
+            <input type="hidden" name="Status" value="false" />
+            <label class="form-check-label" for="Status">Open for enrollment</label>
+        </div>
+    </div>
+</div>

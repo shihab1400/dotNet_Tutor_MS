@@ -1,7 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using ProjectShihab.Entities;
 using ProjectShihab.Repos;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace ProjectShihab.Api.Controllers
 {
@@ -10,29 +9,13 @@ namespace ProjectShihab.Api.Controllers
     public class OfferedCourseController(OfferedCourseRepo repo) : ControllerBase
     {
         [HttpGet]
-        public IActionResult GetAll()
-        {
-            var result = repo.GetAll();
-            return Ok(result);
-        }
-        [HttpGet("GetById/{id}")]
-        public IActionResult GetById(int id)
-        {
-            var result = repo.GetById(id);
-            return Ok(result);
-        }
-        [HttpPost]
-        public IActionResult Save(OfferedCourse model)
-        {
-            var result = repo.Save(model);
-            return Ok(result);
-        }
+        public IActionResult GetAll(int? tutorId, bool onlyActive = false) => Ok(repo.GetAll(tutorId, onlyActive));
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var success = repo.Delete(id);
-            return Ok(success);
-        }
+        [HttpGet("GetById/{id}")]
+        public IActionResult GetById(int id) => Ok(repo.GetById(id));
+
+        // The repo rejects tutors that hold no certificate for the course.
+        [HttpPost]
+        public IActionResult Save(OfferedCourse model) => Ok(repo.Save(model, model.TutorId));
     }
 }

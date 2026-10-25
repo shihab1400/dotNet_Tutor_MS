@@ -1,60 +1,174 @@
-﻿<!DOCTYPE html>
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+    var curController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var curAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var name = User.Identity?.Name ?? "";
+    var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpper(p[0])));
+
+    // (section, controller, action, icon, label)
+    var nav = new List<(string Section, string C, string A, string Icon, string Label)>
+    {
+        ("", "Dashboard", "Index", "bi-grid-1x2", "Dashboard")
+    };
+    if (role == Roles.Admin)
+    {
+        nav.AddRange([
+            ("People", "User", "Index", "bi-people", "Users"),
+            ("Catalog", "Group", "Index", "bi-collection", "Groups"),
+            ("Catalog", "Course", "Index", "bi-book", "Courses"),
+            ("Catalog", "Training", "Index", "bi-easel", "Trainings"),
+            ("Catalog", "OfferedCourse", "Index", "bi-journal-bookmark", "Offered Courses"),
+            ("Catalog", "Certificate", "Index", "bi-award", "Certificates"),
+            ("Sales", "Coupon", "Index", "bi-ticket-perforated", "Coupons"),
+            ("Sales", "Payment", "Index", "bi-receipt", "Payments"),
+            ("Sales", "Rating", "Index", "bi-star", "Ratings"),
+            ("System", "Log", "Index", "bi-shield-check", "Activity Log")
+        ]);
+    }
+    else if (role == Roles.Trainer)
+    {
+        nav.AddRange([
+            ("Training", "Training", "Index", "bi-easel", "My Trainings"),
+            ("Training", "Training", "Enrollments", "bi-people", "Enrolled Tutors"),
+            ("Training", "Certificate", "Index", "bi-award", "Certificates")
+        ]);
+    }
+    else if (role == Roles.Tutor)
+    {
+        nav.AddRange([
+            ("Get trained", "Training", "Index", "bi-search", "Browse Trainings"),
+            ("Get trained", "Training", "MyTrainings", "bi-easel", "My Trainings"),
+            ("Get trained", "Certificate", "Index", "bi-award", "My Certificates"),
+            ("Teach", "OfferedCourse", "Index", "bi-journal-bookmark", "My Courses"),
+            ("Teach", "OfferedCourse", "Students", "bi-people", "My Students"),
+            ("Teach", "Rating", "Index", "bi-star", "My Ratings"),
+            ("Account", "Payment", "Index", "bi-receipt", "Payments")
+        ]);
+    }
+    else if (role == Roles.Student)
+    {
+        nav.AddRange([
+            ("Learn", "OfferedCourse", "Index", "bi-search", "Browse Courses"),
+            ("Learn", "Enrollment", "Index", "bi-journal-check", "My Learning"),
+            ("Account", "Payment", "Index", "bi-receipt", "Payments")
+        ]);
+    }
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ProjectShihab.Web</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-superhero.css" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <title>@ViewData["Title"] - Amar School</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/ProjectShihab.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        @if(User.Identity!=null && User.Identity.IsAuthenticated)
-        {
-            <nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark">
-                <div class="container-fluid" bis_skin_checked="1">
-                    <a class="navbar-brand" href="#">Amar School</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor02" aria-controls="navbarColor02" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarColor02" bis_skin_checked="1">
-                        <ul class="navbar-nav me-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Index">
-                                    Home
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="OfferedCourse" asp-action="Index">Offered Courses</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Recommendation" asp-action="Index">Recommendation</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Rating" asp-action="Index">Rating</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Auth" asp-action="Logout">Log Out</a>
-                            </li>
-                        </ul>
+    @* Pages with a FullWidth section (the landing page) always use the public layout. *@
+    @if (signedIn && !IsSectionDefined("FullWidth"))
+    {
+        <div class="app-shell">
+            <aside class="sidebar" id="sidebar">
+                <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span> Amar School
+                </a>
+                <nav class="sidebar-nav">
+                    @{ string? lastSection = null; }
+                    @foreach (var item in nav)
+                    {
+                        if (item.Section != lastSection && item.Section != "")
+                        {
+                            <div class="sidebar-section">@item.Section</div>
+                        }
+                        lastSection = item.Section;
+                        var active = string.Equals(curController, item.C, StringComparison.OrdinalIgnoreCase)
+                                     && (string.Equals(curAction, item.A, StringComparison.OrdinalIgnoreCase)
+                                         || (item.A == "Index" && !nav.Any(n => n.C == item.C && n.A != "Index" && string.Equals(n.A, curAction, StringComparison.OrdinalIgnoreCase))));
+                        <a class="sidebar-link @(active ? "active" : "")" asp-controller="@item.C" asp-action="@item.A">
+                            <i class="bi @item.Icon"></i> @item.Label
+                        </a>
+                    }
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <span class="avatar">@initials</span>
+                        <div class="flex-grow-1">
+                            <div class="name">@name</div>
+                            <div class="role">@role</div>
+                        </div>
+                        <a asp-controller="Auth" asp-action="Logout" class="text-secondary" title="Log out"><i class="bi bi-box-arrow-right fs-5"></i></a>
                     </div>
                 </div>
-            </nav>
-        }
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - ProjectShihab.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </aside>
+            <div class="sidebar-backdrop"></div>
+            <div class="app-main">
+                <header class="topbar">
+                    <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Toggle menu"><i class="bi bi-list"></i></button>
+                    <div class="crumb">@role <i class="bi bi-chevron-right mx-1 small"></i> <strong>@ViewData["Title"]</strong></div>
+                    <div class="ms-auto d-flex align-items-center gap-3">
+                        <span class="d-none d-md-inline text-muted small"><i class="bi bi-calendar3 me-1"></i>@DateTime.Today.ToString("ddd, dd MMM yyyy")</span>
+                        <a asp-controller="Auth" asp-action="Logout" class="btn btn-light btn-sm"><i class="bi bi-box-arrow-right"></i> Log out</a>
+                    </div>
+                </header>
+                <main class="content">
+                    <partial name="_Message" />
+                    @RenderBody()
+                </main>
+            </div>
         </div>
-    </footer>
+    }
+    else
+    {
+        <nav class="navbar navbar-expand-md public-nav">
+            <div class="container">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span> Amar School
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav" aria-controls="publicNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="publicNav">
+                    <ul class="navbar-nav me-auto ms-md-4">
+                        <li class="nav-item"><a class="nav-link" href="/#features">Features</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#courses">Courses</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#how">How it works</a></li>
+                    </ul>
+                    <div class="d-flex gap-2 py-2 py-md-0">
+                        @if (signedIn)
+                        {
+                            <a class="btn btn-light" asp-controller="Auth" asp-action="Logout">Log out</a>
+                            <a class="btn btn-primary" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                        }
+                        else
+                        {
+                            <a class="btn btn-light" asp-controller="Auth" asp-action="Login">Log in</a>
+                            <a class="btn btn-primary" asp-controller="Auth" asp-action="Register">Get started</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <main>
+            @if (IsSectionDefined("FullWidth"))
+            {
+                @RenderSection("FullWidth")
+            }
+            <div class="container">
+                <partial name="_Message" />
+                @RenderBody()
+            </div>
+        </main>
+        <footer class="public-footer">
+            <div class="container d-flex flex-wrap justify-content-between gap-2">
+                <span><strong class="text-dark">Amar School</strong> · Tutor Management System</span>
+                <span>&copy; @DateTime.Today.Year Amar School. All rights reserved.</span>
+            </div>
+        </footer>
+    }
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

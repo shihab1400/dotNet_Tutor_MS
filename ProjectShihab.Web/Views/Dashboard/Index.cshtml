@@ -1,0 +1,100 @@
+@model DashboardStats
+@{
+    ViewData["Title"] = "Dashboard";
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var first = (User.Identity?.Name ?? "").Replace("Dr. ", "").Split(' ')[0];
+    var hour = DateTime.Now.Hour;
+    var greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+    var links = role switch
+    {
+        Roles.Admin => new[] {
+            ("User", "CreateTrainer", "bi-person-plus", "Add a trainer", "Trainers can only be created by you"),
+            ("Course", "Index", "bi-book", "Manage courses", "Groups, subjects and base prices"),
+            ("Coupon", "Index", "bi-ticket-perforated", "Coupons", "Percentage and fixed discounts"),
+            ("Log", "Index", "bi-shield-check", "Activity log", "Every action of every user") },
+        Roles.Trainer => new[] {
+            ("Training", "Edit", "bi-plus-circle", "Create a training", "Offer training for a course"),
+            ("Training", "Enrollments", "bi-people", "Enrolled tutors", "Complete trainings and certify"),
+            ("Certificate", "Index", "bi-award", "Certificates", "Everything you have issued") },
+        Roles.Tutor => new[] {
+            ("Training", "Index", "bi-search", "Find a training", "Get certified for a new subject"),
+            ("OfferedCourse", "Edit", "bi-plus-circle", "Offer a course", "Teach a subject you're certified in"),
+            ("OfferedCourse", "Students", "bi-people", "My students", "Mark students as completed") },
+        _ => new[] {
+            ("OfferedCourse", "Index", "bi-search", "Browse courses", "Find a certified tutor"),
+            ("Enrollment", "Index", "bi-journal-check", "My learning", "Materials and ratings"),
+            ("Payment", "Index", "bi-receipt", "Payment history", "All your receipts") }
+    };
+}
+
+<div class="page-header">
+    <div>
+        <h1>@greet, @first 👋</h1>
+        <p>Here's what's happening with your @(role?.ToLower()) account today.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    @foreach (var c in Model.Cards)
+    {
+        <div class="col-sm-6 col-xl-3">
+            <div class="card stat">
+                <span class="stat-icon @c.Tone"><i class="bi @c.Icon"></i></span>
+                <div>
+                    <div class="stat-value">@c.Value</div>
+                    <div class="stat-label">@c.Label</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between">
+                <span>@Model.ActivityTitle</span>
+                @if (role == Roles.Admin)
+                {
+                    <a asp-controller="Log" asp-action="Index" class="small fw-semibold">View all</a>
+                }
+            </div>
+            @if (Model.Activity.Any())
+            {
+                <ul class="activity">
+                    @foreach (var a in Model.Activity)
+                    {
+                        <li>
+                            <span class="dot"></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="what">@a.Title</div>
+                                <div class="cell-sub text-truncate">@a.Sub</div>
+                            </div>
+                            <span class="when">@Ui.Ago(a.When)</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <partial name="_Empty" model="@(("bi-inbox", "Nothing yet", "Activity will show up here."))" />
+            }
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">Quick actions</div>
+            <div class="card-body d-grid gap-3 align-content-start">
+                @foreach (var l in links)
+                {
+                    <a class="quick-link" asp-controller="@l.Item1" asp-action="@l.Item2">
+                        <span class="stat-icon tone-brand" style="width:40px;height:40px;font-size:1.1rem"><i class="bi @l.Item3"></i></span>
+                        <span><span class="title d-block">@l.Item4</span><span class="sub">@l.Item5</span></span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

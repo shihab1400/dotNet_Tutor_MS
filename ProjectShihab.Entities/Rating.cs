@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ProjectShihab.Entities
 {
@@ -13,23 +8,28 @@ namespace ProjectShihab.Entities
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public int UserId { get; set; }
-        [Required]
-        [StringLength(250)]
-        public string CourseType { get; set; } = null!;
-        public int CourseId { get; set; }
+        public int CourseEnrollmentId { get; set; }
+        public int StudentId { get; set; }
+        public int TutorId { get; set; }
+        public int OfferedCourseId { get; set; }
         [Column("Rating")]
-        [Required]
+        [Range(1, 5)]
+        [Display(Name = "Rating")]
         public int RatingValue { get; set; }
-        [Required]
         [StringLength(250)]
-        public string Feedback { get; set; } = null!;
+        public string? Feedback { get; set; }
+        public DateTime CreatedAt { get; set; }
 
+        [ForeignKey("CourseEnrollmentId")]
+        public virtual CourseEnrollment? CourseEnrollment { get; set; }
 
-        [ForeignKey("CourseId")]
-        public virtual Course Course { get; set; }
+        [ForeignKey("StudentId")]
+        public virtual User? Student { get; set; }
 
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; }
+        [ForeignKey("TutorId")]
+        public virtual User? Tutor { get; set; }
+
+        [ForeignKey("OfferedCourseId")]
+        public virtual OfferedCourse? OfferedCourse { get; set; }
     }
 }

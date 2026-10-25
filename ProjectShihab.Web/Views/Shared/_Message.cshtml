@@ -1,31 +1,20 @@
-﻿@if (string.IsNullOrEmpty(ViewBag.Error) == false)
-{
-	<div class="alert alert-dismissible alert-danger mt-2">
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		<strong>@ViewBag.Error</strong>
-	</div>
+﻿@{
+    var error = ViewBag.Error as string ?? TempData["Error"]?.ToString();
+    var success = ViewBag.Success as string ?? TempData["Success"]?.ToString();
 }
-
-@if (string.IsNullOrEmpty(ViewBag.Success) == false)
+@if (!string.IsNullOrEmpty(error))
 {
-	<div class="alert alert-dismissible alert-success mt-2">
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		<strong>@ViewBag.Success</strong>
-	</div>
+    <div class="flash flash-error alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-octagon"></i>
+        <div>@error</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
-
-@if (string.IsNullOrEmpty(TempData["Error"]?.ToString()) == false)
+@if (!string.IsNullOrEmpty(success))
 {
-	<div class="alert alert-dismissible alert-danger mt-2">
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		<strong>@TempData["Error"]</strong>
-	</div>
-}
-
-@if (string.IsNullOrEmpty(TempData["Success"]?.ToString()) == false)
-{
-	<div class="alert alert-dismissible alert-success mt-2">
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		<strong>@TempData["Success"]</strong>
-	</div>
+    <div class="flash flash-success alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i>
+        <div>@success</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }

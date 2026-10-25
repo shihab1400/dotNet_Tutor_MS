@@ -1,0 +1,57 @@
+@model List<CourseEnrollment>
+@{
+    ViewData["Title"] = "My students";
+}
+
+<div class="page-header">
+    <div>
+        <h1>My students</h1>
+        <p>@Model.Count enrollment(s) · @Model.Count(e => e.Status == EnrollmentStatus.Completed) completed. Students can rate you once you mark them completed.</p>
+    </div>
+</div>
+
+<div class="mb-3" style="max-width:320px">
+    <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input class="form-control" placeholder="Search students…" data-table-filter="#studentsTable" />
+    </div>
+</div>
+
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <partial name="_Empty" model="@(("bi-people", "No students yet", "Students appear here after they enroll in your courses."))" />
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="studentsTable">
+                <thead><tr><th>Student</th><th>Course</th><th>Enrolled</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+                <tbody>
+                    @foreach (var e in Model)
+                    {
+                        <tr>
+                            <td>@Ui.Person(e.Student?.UserName, e.Student?.Email)</td>
+                            <td class="cell-title">@e.OfferedCourse?.Course?.Subject</td>
+                            <td class="cell-sub">@e.EnrolledAt.ToString("dd MMM yyyy")</td>
+                            <td>@Ui.Status(e.Status)</td>
+                            <td class="text-end">
+                                @if (e.Status == EnrollmentStatus.Enrolled)
+                                {
+                                    <form asp-action="Complete" method="post" class="d-inline" data-confirm="Mark course completed for @e.Student?.UserName?">
+                                        <input type="hidden" name="id" value="@e.Id" />
+                                        <button type="submit" class="btn btn-sm btn-soft-success"><i class="bi bi-check2-circle"></i> Mark completed</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="cell-sub">on @e.CompletedAt?.ToString("dd MMM yyyy")</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

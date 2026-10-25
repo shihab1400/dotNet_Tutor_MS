@@ -1,7 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using ProjectShihab.Entities;
 using ProjectShihab.Repos;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using ProjectShihab.Shared;
 
 namespace ProjectShihab.Api.Controllers
 {
@@ -9,30 +9,31 @@ namespace ProjectShihab.Api.Controllers
     [ApiController]
     public class UserController(UserRepo repo) : ControllerBase
     {
+        // Registration and trainer creation live in the Web app; the API never returns password hashes.
         [HttpGet]
-        public IActionResult GetAll()
+        public IActionResult GetAll(string? role)
         {
-            var result = repo.GetAll();
+            var result = repo.GetAll(role);
+            result.Data?.ForEach(u => u.PasswordHash = string.Empty);
             return Ok(result);
         }
+
         [HttpGet("GetById/{id}")]
         public IActionResult GetById(int id)
         {
             var result = repo.GetById(id);
-            return Ok(result);
-        }
-        [HttpPost]
-        public IActionResult Save(User model)
-        {
-            var result = repo.Save(model);
+            if (result.Data != null)
+                result.Data.PasswordHash = string.Empty;
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [HttpPut("{id}/Status")]
+        public IActionResult SetStatus(int id, bool status)
         {
-            var success = repo.Delete(id);
-            return Ok(success);
+            var result = repo.SetStatus(id, status);
+            if (result.Data != null)
+                result.Data.PasswordHash = string.Empty;
+            return Ok(result);
         }
     }
 }

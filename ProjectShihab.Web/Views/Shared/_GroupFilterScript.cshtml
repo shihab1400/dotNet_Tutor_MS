@@ -1,0 +1,17 @@
+<script>
+    // Filters #tiles children by their data-group using the #groupChips buttons.
+    (function () {
+        var chips = document.getElementById('groupChips');
+        if (!chips) return;
+        chips.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-group]');
+            if (!btn) return;
+            chips.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('active'); });
+            btn.classList.add('active');
+            var g = btn.getAttribute('data-group');
+            document.querySelectorAll('#tiles > [data-group]').forEach(function (t) {
+                t.style.display = !g || t.getAttribute('data-group') === g ? '' : 'none';
+            });
+        });
+    })();
+</script>

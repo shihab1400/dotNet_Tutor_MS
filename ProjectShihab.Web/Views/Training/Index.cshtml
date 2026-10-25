@@ -1,0 +1,95 @@
+@model List<TrainingOffering>
+@{
+    var isTrainer = User.IsInRole(Roles.Trainer);
+    var isTutor = User.IsInRole(Roles.Tutor);
+    ViewData["Title"] = isTrainer ? "My trainings" : isTutor ? "Browse trainings" : "Trainings";
+    var enrolled = ViewBag.EnrolledIds as HashSet<int> ?? new HashSet<int>();
+    var groups = Model.Select(t => t.Course?.Group?.Title).Where(g => g != null).Distinct().OrderBy(g => g).ToList();
+}
+
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>@(isTutor ? "Complete a training to get certified, then you can teach that course." : isTrainer ? "Trainings you offer to tutors." : "All trainings offered by trainers.")</p>
+    </div>
+    @if (isTrainer)
+    {
+        <div class="page-actions"><a asp-action="Edit" asp-route-id="0" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New training</a></div>
+    }
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><partial name="_Empty" model="@(("bi-easel", "No trainings yet", isTrainer ? "Create your first training." : "Check back soon."))" /></div>
+}
+else if (isTutor)
+{
+    <div class="chips" id="groupChips">
+        <button type="button" class="chip active" data-group="">All</button>
+        @foreach (var g in groups)
+        {
+            <button type="button" class="chip" data-group="@g">@g</button>
+        }
+    </div>
+    <div class="row g-3" id="tiles">
+        @foreach (var t in Model)
+        {
+            var mine = enrolled.Contains(t.Id);
+            <div class="col-md-6 col-xl-4" data-group="@t.Course?.Group?.Title">
+                <div class="card course-tile">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="tag">@t.Course?.Group?.Title</span>
+                        @if (mine) { @Ui.Pill("Enrolled", "success") }
+                    </div>
+                    <h5 class="mb-1">@t.Course?.Subject</h5>
+                    <div class="cell-sub mb-3"><i class="bi bi-calendar3"></i> @t.StartDate.ToString("dd MMM") – @t.EndDate.ToString("dd MMM yyyy")</div>
+                    @Ui.Person(t.Trainer?.UserName, "Trainer")
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
+                        <span class="price">@Ui.Money(t.Price)</span>
+                        @if (mine)
+                        {
+                            <a asp-controller="Material" asp-action="Index" asp-route-kind="Training" asp-route-id="@t.Id" class="btn btn-sm btn-light"><i class="bi bi-folder2-open"></i> Materials</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Payment" asp-action="Checkout" asp-route-kind="Training" asp-route-id="@t.Id" class="btn btn-sm btn-primary">Enroll <i class="bi bi-arrow-right"></i></a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>Course</th>@if (!isTrainer) { <th>Trainer</th> }<th>Price</th><th>Schedule</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td><div class="cell-title">@t.Course?.Subject</div><div class="cell-sub">@t.Course?.Group?.Title</div></td>
+                            @if (!isTrainer) { <td>@Ui.Person(t.Trainer?.UserName)</td> }
+                            <td>@Ui.Money(t.Price)</td>
+                            <td class="cell-sub text-nowrap">@t.StartDate.ToString("dd MMM yyyy") – @t.EndDate.ToString("dd MMM yyyy")</td>
+                            <td>@Ui.Open(t.Status, t.EndDate)</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-controller="Material" asp-action="Index" asp-route-kind="Training" asp-route-id="@t.Id" class="btn btn-sm btn-light"><i class="bi bi-folder2-open"></i> Materials</a>
+                                @if (isTrainer)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_GroupFilterScript" />
+}

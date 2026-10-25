@@ -1,0 +1,68 @@
+@model Coupon
+@{
+    ViewData["Title"] = Model.Id == 0 ? "New coupon" : "Edit coupon";
+}
+
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Percentage coupons take a share off the price; fixed coupons subtract an amount.</p>
+    </div>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div>
+
+<div class="card form-card">
+    <div class="card-body p-4">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="UsedCount" />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Code" class="form-label"></label>
+                    <input asp-for="Code" class="form-control mono text-uppercase" placeholder="e.g. WELCOME10" />
+                    <span asp-validation-for="Code" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Type" class="form-label"></label>
+                    <select asp-for="Type" class="form-select">
+                        <option value="Percentage">Percentage (%)</option>
+                        <option value="Fixed">Fixed amount (৳)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Value" class="form-label"></label>
+                    <input asp-for="Value" class="form-control" />
+                    <span asp-validation-for="Value" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ExpiryDate" class="form-label"></label>
+                    <input asp-for="ExpiryDate" type="date" class="form-control" value="@Model.ExpiryDate.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="MaxUses" class="form-label"></label>
+                    <input asp-for="MaxUses" class="form-control" />
+                    <span asp-validation-for="MaxUses" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" role="switch" />
+                        <label asp-for="IsActive" class="form-check-label">Active</label>
+                    </div>
+                    @if (Model.Id != 0)
+                    {
+                        <div class="cell-sub mt-1">Used @Model.UsedCount time(s) so far.</div>
+                    }
+                </div>
+            </div>
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save coupon</button>
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

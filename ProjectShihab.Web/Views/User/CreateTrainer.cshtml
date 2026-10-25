@@ -1,0 +1,29 @@
+@model RegisterModel
+@{
+    ViewData["Title"] = "Add trainer";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Add trainer</h1>
+        <p>Trainers train tutors and issue their certificates.</p>
+    </div>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back to users</a></div>
+</div>
+
+<div class="card form-card">
+    <div class="card-body p-4">
+        <form asp-action="CreateTrainer" method="post">
+            <div class="form-section-title">Trainer details</div>
+            <partial name="_PersonFields" model="Model" />
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-person-plus"></i> Create trainer</button>
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

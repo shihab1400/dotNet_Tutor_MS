@@ -1,0 +1,40 @@
+@model OfferedCourse
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Offer a course" : "Edit course";
+    var courses = (SelectList)ViewBag.Courses;
+}
+
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Only courses you hold a training certificate for are listed.</p>
+    </div>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div>
+
+@if (!courses.Any())
+{
+    <div class="card form-card">
+        <div class="card-body text-center p-5">
+            <span class="stat-icon tone-warning mb-3"><i class="bi bi-award"></i></span>
+            <h4>You need a certificate first</h4>
+            <p class="text-muted">Enroll in a training and complete it to get certified for a course.</p>
+            <a asp-controller="Training" asp-action="Index" class="btn btn-primary"><i class="bi bi-search"></i> Browse trainings</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card form-card">
+        <div class="card-body p-4">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <partial name="_OfferingForm" model="@((courses, Model.Price, Model.StartDate, Model.EndDate, Model.Status, Model.CourseId))" />
+                <div class="form-actions mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save course</button>
+                    <a asp-action="Index" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+}

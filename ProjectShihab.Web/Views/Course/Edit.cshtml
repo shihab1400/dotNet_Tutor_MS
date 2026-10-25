@@ -1,0 +1,45 @@
+@model Course
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Add course" : "Edit course";
+}
+
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Trainers and tutors build their offerings on top of these courses.</p>
+    </div>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div>
+
+<div class="card form-card narrow">
+    <div class="card-body p-4">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div class="mb-3">
+                <label asp-for="GroupId" class="form-label"></label>
+                <select asp-for="GroupId" class="form-select" asp-items="@((SelectList)ViewBag.Groups)"></select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Subject" class="form-label"></label>
+                <input asp-for="Subject" class="form-control" placeholder="e.g. Algorithms" />
+                <span asp-validation-for="Subject" class="text-danger small"></span>
+            </div>
+            <div class="mb-4">
+                <label asp-for="BasePrice" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">৳</span>
+                    <input asp-for="BasePrice" class="form-control" />
+                </div>
+                <span asp-validation-for="BasePrice" class="text-danger small"></span>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Save course</button>
+                <a asp-action="Index" class="btn btn-light">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

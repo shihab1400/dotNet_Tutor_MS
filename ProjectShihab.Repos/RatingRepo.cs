@@ -1,109 +1,81 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectShihab.Data;
 using ProjectShihab.Entities;
 using ProjectShihab.Shared;
 
 namespace ProjectShihab.Repos
 {
-    public class RatingRepo(AsDbContext context)
+    public class RatingRepo(AsDbContext context, LogRepo logRepo)
     {
-        public Result<List<Rating>> GetAll()
+        public Result<List<Rating>> GetAll(int? tutorId = null, int? studentId = null)
         {
-            var result = new Result<List<Rating>>();
             try
             {
-                result.Data = context.Ratings.Include(e=>e.Course).Include(e=>e.User).ToList();
+                var query = context.Ratings.Include(e => e.Student).Include(e => e.Tutor)
+                    .Include(e => e.OfferedCourse).ThenInclude(o => o!.Course).AsQueryable();
+                if (tutorId != null)
+                    query = query.Where(e => e.TutorId == tutorId);
+                if (studentId != null)
+                    query = query.Where(e => e.StudentId == studentId);
+                return Result<List<Rating>>.Ok(query.OrderByDescending(e => e.Id).ToList());
             }
             catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = e.Message;
+                return Result<List<Rating>>.Fail(e.Message);
             }
-
-            return result;
         }
 
-        public Result<Rating> GetById(int id)
+        // tutorId -> (average, count)
+        public Dictionary<int, (double Average, int Count)> GetTutorAverages()
         {
-            var result = new Result<Rating>();
             try
             {
-                result.Data = context.Ratings.Find(id);
+                return context.Ratings.GroupBy(e => e.TutorId)
+                    .Select(g => new { g.Key, Avg = g.Average(r => r.RatingValue), Cnt = g.Count() })
+                    .ToDictionary(e => e.Key, e => (e.Avg, e.Cnt));
+            }
+            catch
+            {
+                return new Dictionary<int, (double, int)>();
+            }
+        }
+
+        public Result<Rating> Save(int courseEnrollmentId, int studentId, int ratingValue, string? feedback)
+        {
+            try
+            {
+                if (ratingValue < 1 || ratingValue > 5)
+                    return Result<Rating>.Fail("Rating must be between 1 and 5.");
+
+                var enrollment = context.CourseEnrollments.Include(e => e.OfferedCourse)
+                    .FirstOrDefault(e => e.Id == courseEnrollmentId && e.StudentId == studentId);
+                if (enrollment == null)
+                    return Result<Rating>.Fail("Enrollment not found.");
+                if (enrollment.Status != EnrollmentStatus.Completed)
+                    return Result<Rating>.Fail("You can rate a course only after completing it.");
+                if (context.Ratings.Any(e => e.CourseEnrollmentId == courseEnrollmentId))
+                    return Result<Rating>.Fail("You have already rated this course.");
+
+                var rating = new Rating
+                {
+                    CourseEnrollmentId = courseEnrollmentId,
+                    StudentId = studentId,
+                    TutorId = enrollment.OfferedCourse!.TutorId,
+                    OfferedCourseId = enrollment.OfferedCourseId,
+                    RatingValue = ratingValue,
+                    Feedback = feedback,
+                    CreatedAt = DateTime.Now
+                };
+                context.Ratings.Add(rating);
+                context.SaveChanges();
+
+                logRepo.Add("Rate Course", "Rating", rating.Id, $"{ratingValue} star(s) for OfferedCourseId {rating.OfferedCourseId}");
+                return Result<Rating>.Ok(rating);
             }
             catch (Exception e)
             {
-                result.HasError = true;
-                result.Message = e.Message;
+                return Result<Rating>.Fail(e.Message);
             }
-
-            return result;
-        }
-
-        public Result<Rating> Save(Rating model)
-        {
-            var result = new Result<Rating>();
-
-            try
-            {
-                if (context.Ratings.Any(e => e.Id != model.Id))
-                {
-                    result.HasError = true;
-                    result.Message = "Already exists.";
-                    return result;
-                }
-
-                var objToSave = context.Ratings.Find(model.Id);
-                if (objToSave == null)
-                {
-                    objToSave = new Rating();
-                    context.Ratings.Add(objToSave);
-                }
-
-                objToSave.UserId = model.UserId;
-                objToSave.CourseType = model.CourseType;
-                objToSave.CourseId = model.CourseId;
-                objToSave.RatingValue = model.RatingValue;
-                objToSave.Feedback = model.Feedback;
-
-                context.SaveChanges();
-                result.Data = objToSave;
-            }
-            catch (Exception ex)
-            {
-                result.HasError = true;
-                result.Message = ex.Message;
-            }
-
-            return result;
-        }
-
-        public Result<Rating> Delete(int id)
-        {
-            var result = new Result<Rating>();
-
-            try
-            {
-                var entity = context.Ratings.Find(id);
-
-                if (entity == null)
-                {
-                    result.HasError = true;
-                    result.Message = $"Rating with ID {id} was not found.";
-                    return result;
-                }
-
-                context.Ratings.Remove(entity);
-                context.SaveChanges();
-
-                result.Data = entity;
-            }
-            catch (Exception ex)
-            {
-                result.HasError = true;
-                result.Message = "An error occurred while deleting the Rating.";
-            }
-
-            return result;
         }
     }
 }

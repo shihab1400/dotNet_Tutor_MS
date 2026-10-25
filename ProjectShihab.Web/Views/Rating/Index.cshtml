@@ -1,48 +1,64 @@
-﻿@model List<Rating>
+@model List<Rating>
+@{
+    ViewData["Title"] = "Ratings";
+    var isTutor = User.IsInRole(Roles.Tutor);
+    var avg = Model.Any() ? Model.Average(r => r.RatingValue) : 0;
+}
 
-@Html.Partial("_Message")
-
-<div class="row pt-4">
-	<div class="col-6">
-		<h2>Ratings</h2>
-	</div>
-	<hr />
+<div class="page-header">
+    <div>
+        <h1>@(isTutor ? "My ratings" : "Ratings")</h1>
+        <p>Feedback from students after completing a course.</p>
+    </div>
 </div>
 
-<div class="row pt-2">
-	<div class="col-12">
+@if (Model.Any())
+{
+    <div class="card mb-4">
+        <div class="card-body d-flex flex-wrap gap-4 align-items-center">
+            <div class="text-center px-3">
+                <div class="display-5 fw-bold text-dark">@avg.ToString("0.0")</div>
+                <div class="fs-5">@Ui.Stars(avg)</div>
+                <div class="cell-sub">@Model.Count review(s)</div>
+            </div>
+            <div class="flex-grow-1" style="min-width:240px">
+                @for (var s = 5; s >= 1; s--)
+                {
+                    var n = Model.Count(r => r.RatingValue == s);
+                    var pct = n * 100 / Model.Count;
+                    <div class="d-flex align-items-center gap-2 small mb-1">
+                        <span style="width:14px">@s</span><i class="bi bi-star-fill text-warning"></i>
+                        <div class="progress flex-grow-1" style="height:8px"><div class="progress-bar bg-warning" style="width:@pct%"></div></div>
+                        <span class="text-muted" style="width:28px">@n</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 
-		<table class="table table-bordered table-hover">
-			<tr class="table-info">
-				<th>Ref</th>
-				<th>User</th>
-				<th>CourseType</th>
-				<th>CourseId</th>
-				<th>Rating</th>
-				<th>Feedback</th>
-			</tr>
-
-			@if (Model.Count == 0)
-			{
-				<tr class="table-secondary text-center">
-					<td colspan="5">No Data to show.</td>
-				</tr>
-			}
-			else
-			{
-				foreach (var rating in Model)
-				{
-					<tr>
-						<td>@rating.Id</td>
-						<td>@rating.User.UserName</td>
-						<td>@rating.CourseType</td>
-						<td>@rating.Course.Subject</td>
-						<td>@rating.RatingValue</td>
-						<td>@rating.Feedback</td>
-					</tr>
-				}
-			}
-		</table>
-
-	</div>
+<div class="card table-card">
+    @if (Model.Count == 0)
+    {
+        <partial name="_Empty" model="@(("bi-star", "No ratings yet", "Ratings appear after students complete a course."))" />
+    }
+    else
+    {
+        <ul class="activity">
+            @foreach (var r in Model)
+            {
+                <li class="py-3">
+                    <span class="avatar">@Ui.Initials(r.Student?.UserName)</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <div><span class="what">@r.Student?.UserName</span> <span class="cell-sub">on @r.OfferedCourse?.Course?.Subject@(isTutor ? "" : $" · tutor {r.Tutor?.UserName}")</span></div>
+                            <span class="when">@r.CreatedAt.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="my-1">@Ui.Stars(r.RatingValue)</div>
+                        @if (!string.IsNullOrWhiteSpace(r.Feedback)) { <div>“@r.Feedback”</div> }
+                    </div>
+                </li>
+            }
+        </ul>
+    }
 </div>

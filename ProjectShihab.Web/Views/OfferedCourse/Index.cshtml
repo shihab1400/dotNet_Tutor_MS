@@ -1,54 +1,104 @@
-﻿@model List<OfferedCourse>
+@model List<OfferedCourse>
+@{
+    var isTutor = User.IsInRole(Roles.Tutor);
+    var isStudent = User.IsInRole(Roles.Student);
+    ViewData["Title"] = isTutor ? "My courses" : isStudent ? "Browse courses" : "Offered courses";
+    var averages = (Dictionary<int, (double Average, int Count)>)ViewBag.Averages;
+    var enrolled = ViewBag.EnrolledIds as HashSet<int> ?? new HashSet<int>();
+    var groups = Model.Select(o => o.Course?.Group?.Title).Where(g => g != null).Distinct().OrderBy(g => g).ToList();
+}
 
-@Html.Partial("_Message")
-
-<div class="row pt-4">
-	<div class="col-6">
-		<h2>Offered Course</h2>
-	</div>
-	<hr />
+<div class="page-header">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>@(isStudent ? "Every tutor here is certified for the course they teach." : isTutor ? "Courses you teach. You can only offer courses you hold a certificate for." : "All courses offered by tutors.")</p>
+    </div>
+    @if (isTutor)
+    {
+        <div class="page-actions"><a asp-action="Edit" asp-route-id="0" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Offer a course</a></div>
+    }
 </div>
 
-<div class="row pt-2">
-	<div class="col-12">
+@if (Model.Count == 0)
+{
+    <div class="card"><partial name="_Empty" model="@(("bi-journal-bookmark", "No courses yet", isTutor ? "Get certified, then offer your first course." : "Check back soon."))" /></div>
+}
+else if (isStudent)
+{
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+        <div class="chips" id="groupChips">
+            <button type="button" class="chip active" data-group="">All</button>
+            @foreach (var g in groups)
+            {
+                <button type="button" class="chip" data-group="@g">@g</button>
+            }
+        </div>
+    </div>
+    <div class="row g-3" id="tiles">
+        @foreach (var o in Model)
+        {
+            averages.TryGetValue(o.TutorId, out var r);
+            var mine = enrolled.Contains(o.Id);
+            <div class="col-md-6 col-xl-4" data-group="@o.Course?.Group?.Title">
+                <div class="card course-tile">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="tag">@o.Course?.Group?.Title</span>
+                        @if (mine) { @Ui.Pill("Enrolled", "success") }
+                    </div>
+                    <h5 class="mb-1">@o.Course?.Subject</h5>
+                    <div class="cell-sub mb-3"><i class="bi bi-calendar3"></i> @o.StartDate.ToString("dd MMM") – @o.EndDate.ToString("dd MMM yyyy")</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        @Ui.Person(o.User?.UserName, "Certified tutor")
+                        <span class="small text-nowrap">@if (r.Count > 0) { <i class="bi bi-star-fill text-warning"></i> <strong>@r.Average.ToString("0.0")</strong> <span class="text-muted">(@r.Count)</span> } else { <span class="text-muted">New</span> }</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
+                        <span class="price">@Ui.Money(o.Price)</span>
+                        @if (mine)
+                        {
+                            <a asp-controller="Material" asp-action="Index" asp-route-kind="Course" asp-route-id="@o.Id" class="btn btn-sm btn-light"><i class="bi bi-folder2-open"></i> Materials</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Payment" asp-action="Checkout" asp-route-kind="Course" asp-route-id="@o.Id" class="btn btn-sm btn-primary">Enroll <i class="bi bi-arrow-right"></i></a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead><tr><th>Course</th>@if (!isTutor) { <th>Tutor</th> }<th>Rating</th><th>Price</th><th>Schedule</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+                <tbody>
+                    @foreach (var o in Model)
+                    {
+                        averages.TryGetValue(o.TutorId, out var r);
+                        <tr>
+                            <td><div class="cell-title">@o.Course?.Subject</div><div class="cell-sub">@o.Course?.Group?.Title</div></td>
+                            @if (!isTutor) { <td>@Ui.Person(o.User?.UserName)</td> }
+                            <td class="text-nowrap">@if (r.Count > 0) { @Ui.Stars(r.Average) <span class="cell-sub">@r.Average.ToString("0.0")</span> } else { <span class="cell-sub">No ratings</span> }</td>
+                            <td>@Ui.Money(o.Price)</td>
+                            <td class="cell-sub text-nowrap">@o.StartDate.ToString("dd MMM yyyy") – @o.EndDate.ToString("dd MMM yyyy")</td>
+                            <td>@Ui.Open(o.Status, o.EndDate)</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-controller="Material" asp-action="Index" asp-route-kind="Course" asp-route-id="@o.Id" class="btn btn-sm btn-light"><i class="bi bi-folder2-open"></i> Materials</a>
+                                @if (isTutor)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@o.Id" class="btn btn-sm btn-light"><i class="bi bi-pencil"></i></a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
 
-		<table class="table table-bordered table-hover">
-			<tr class="table-info">
-				<th>Ref</th>
-				<th>Course</th>
-				<th>Tutor</th>
-				<th>Price</th>
-				<th>Start Date</th>
-				<th>End Date</th>
-				<th>Status</th>
-				<th>Action</th>
-			</tr>
-
-			@if (Model.Count == 0)
-			{
-				<tr class="table-secondary text-center">
-					<td colspan="5">No Data to show.</td>
-				</tr>
-			}
-			else
-			{
-				foreach (var offeredCourse in Model)
-				{
-					<tr>
-						<td>@offeredCourse.Id</td>
-						<td>@offeredCourse.Course.Subject</td>
-						<td>@offeredCourse.User.UserName</td>
-						<td>@offeredCourse.Price.ToString("n")</td>
-						<td>@offeredCourse.StartDate</td>
-						<td>@offeredCourse.EndDate</td>
-						<td>@offeredCourse.Status</td>
-						<td>
-							<a asp-action="Apply" asp-controller="OfferedCourse" class="btn btn-primary" asp-route-dataId="@offeredCourse.Id">Apply</a>
-						</td>
-					</tr>
-				}
-			}
-		</table>
-
-	</div>
-</div>
+@section Scripts {
+    <partial name="_GroupFilterScript" />
+}

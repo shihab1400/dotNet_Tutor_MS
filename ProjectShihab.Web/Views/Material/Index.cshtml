@@ -1,0 +1,77 @@
+@model List<Material>
+@{
+    string subject = ViewBag.Title ?? "Materials";
+    ViewData["Title"] = "Materials";
+    string kind = ViewBag.Kind;
+    int targetId = ViewBag.TargetId;
+    bool canUpload = ViewBag.CanUpload;
+}
+
+<div class="page-header">
+    <div>
+        <h1>@subject</h1>
+        <p>@(kind == PaymentKinds.Training ? "Training" : "Course") materials · @Model.Count file(s)</p>
+    </div>
+    <div class="page-actions"><a href="javascript:history.back()" class="btn btn-light"><i class="bi bi-arrow-left"></i> Back</a></div>
+</div>
+
+<div class="row g-4">
+    @if (canUpload)
+    {
+        <div class="col-lg-4 order-lg-2">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-cloud-upload me-1"></i> Upload material</div>
+                <div class="card-body">
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="Kind" value="@kind" />
+                        <input type="hidden" name="TargetId" value="@targetId" />
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input name="Title" class="form-control" placeholder="e.g. Lecture 2 slides" required maxlength="250" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File</label>
+                            <input type="file" name="file" class="form-control" accept=".mp4,.mkv,.webm,.mov,.pdf,.ppt,.pptx,.doc,.docx,.txt,.zip" required />
+                            <div class="cell-sub mt-1">Video, PDF, PowerPoint, Word, text or zip · max 100 MB</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 justify-content-center"><i class="bi bi-upload"></i> Upload</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    <div class="@(canUpload ? "col-lg-8" : "col-12")">
+        <div class="card table-card">
+            @if (Model.Count == 0)
+            {
+                <partial name="_Empty" model="@(("bi-folder2-open", "No materials yet", canUpload ? "Upload the first file." : "Your instructor hasn't uploaded anything yet."))" />
+            }
+            else
+            {
+                <ul class="activity">
+                    @foreach (var m in Model)
+                    {
+                        var icon = Ui.FileIcon(m.FileType);
+                        <li class="align-items-center">
+                            <span class="file-icon @icon.Tone"><i class="bi @icon.Icon"></i></span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="what text-truncate">@m.Title</div>
+                                <div class="cell-sub">@m.FileType · @m.Uploader?.UserName · @m.UploadedAt.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <a asp-action="Download" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Download</a>
+                            @if (canUpload)
+                            {
+                                <form asp-action="Delete" method="post" class="d-inline" data-confirm="Delete '@m.Title'?">
+                                    <input type="hidden" name="id" value="@m.Id" />
+                                    <input type="hidden" name="kind" value="@kind" />
+                                    <input type="hidden" name="targetId" value="@targetId" />
+                                    <button type="submit" class="btn btn-sm btn-soft-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
